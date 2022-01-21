@@ -14,6 +14,9 @@ sealed abstract class MyList[+T] {
   def reverse: MyList[T]
   def ++[S >: T](anotherList: MyList[S]): MyList[S]
   def removeAt(index: Int): MyList[T]
+  def map[S](f: T => S): MyList[S]
+  def flatMap[S](f: T => MyList[S]): MyList[S]
+  def filter(f: T => Boolean): MyList[T]
 }
 
 object MyList {
@@ -43,6 +46,12 @@ case object MyNil extends MyList[Nothing] {
   override def ++[S >: Nothing](anotherList: MyList[S]): MyList[S] = anotherList
 
   override def removeAt(index: Int): MyList[Nothing] = MyNil
+
+  override def map[S](f: Nothing => S): MyList[S] = MyNil
+
+  override def flatMap[S](f: Nothing => MyList[S]): MyList[S] = MyNil
+
+  override def filter(f: Nothing => Boolean): MyList[Nothing] = MyNil
 }
 
 case class ::[+T](override val head: T, override val tail: MyList[T]) extends MyList[T] {
@@ -109,6 +118,39 @@ case class ::[+T](override val head: T, override val tail: MyList[T]) extends My
     if (index < 0) this
     else removeAtRecursive(this, MyNil, 0)
   }
+
+  override def map[S](f: T => S): MyList[S] = {
+    @tailrec // complexity: O(N)
+    def mapRecursive(remaining: MyList[T], acc: MyList[S]): MyList[S] = {
+      if (remaining.isEmpty) acc
+      else mapRecursive(remaining.tail, f(remaining.head) :: acc)
+    }
+    mapRecursive(this, MyNil).reverse
+  }
+
+  override def flatMap[S](f: T => MyList[S]): MyList[S] = {
+    @tailrec
+    def flatMapRecursive(remaining: MyList[T], acc: MyList[S]): MyList[S] = {
+      if (remaining.isEmpty) acc
+      else flatMapRecursive(remaining.tail,  acc ++ f(remaining.head))
+    }
+    flatMapRecursive(this, MyNil)
+  }
+
+  override def filter(f: T => Boolean): MyList[T] = {
+    @tailrec
+    def filterRecursive(remaining: MyList[T], acc: MyList[T]): MyList[T] = {
+      if (remaining.isEmpty) acc
+      else {
+        val newAcc = {
+          if (f(remaining.head)) remaining.head :: acc
+          else acc
+        }
+        filterRecursive(remaining.tail, newAcc)
+      }
+    }
+    filterRecursive(this, MyNil).reverse
+  }
 }
 
 object ListsProblems extends App {
@@ -148,5 +190,23 @@ object ListsProblems extends App {
   assert(testList1.removeAt(3).toString == "[1, 2, 3]")
   assert(testList1.removeAt(10).toString == "[1, 2, 3, 4]")
   assert(shortList.removeAt(0) == MyNil)
-  println("Remove k-th element test OK")
+  println("Remove k-th element tests OK")
+
+  // map
+  assert(testList1.map(x => x * 10).toString == "[10, 20, 30, 40]")
+  assert(testList2.map(x => x + 10).toString == "[15, 16, 17, 18]")
+  assert(shortList.map(x => x + 1).toString == "[2]")
+  assert(emptyList.map(x => x) == MyNil)
+  println("List map tests OK")
+
+  // flatmap
+  assert(testList1.flatMap(n => n + 1 :: MyNil).toString == "[2, 3, 4, 5]")
+  assert(shortList.flatMap(n => n * 10 :: MyNil).toString == "[10]")
+  assert(testList1.flatMap(x => x :: (x * 2) :: MyNil).toString == "[1, 2, 2, 4, 3, 6, 4, 8]")
+  println("Flatmap tests OK")
+
+  // filter
+  assert(largeList.filter(n => n < 5).toString == "[1, 2, 3, 4]")
+  assert(largeList.filter(n => n < 0) == MyNil)
+  println("Filter tests OK")
 }
