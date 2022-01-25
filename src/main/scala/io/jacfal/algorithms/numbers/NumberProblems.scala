@@ -1,15 +1,16 @@
-package io.jacfal.algorithms.lists
+package io.jacfal.algorithms.numbers
 
 import scala.annotation.tailrec
 
 object NumberProblems extends App {
   def isPrime(i: Int): Boolean = {
     @tailrec
-    def isPrimeRecursive(divisor: Int):Boolean = {
+    def isPrimeRecursive(divisor: Int): Boolean = {
       if (divisor > Math.sqrt(i)) true
       else if (i % divisor == 0) false
       else isPrimeRecursive(divisor + 1)
     }
+
     if (i < 2) false
     else isPrimeRecursive(2)
   }
@@ -21,6 +22,7 @@ object NumberProblems extends App {
       else if (remaining % divisor == 0) decomposeRecursive(remaining / divisor, divisor, divisor :: acc)
       else decomposeRecursive(remaining, divisor + 1, acc)
     }
+
     decomposeRecursive(i, 2, List())
   }
 
