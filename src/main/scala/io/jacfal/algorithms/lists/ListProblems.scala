@@ -17,6 +17,9 @@ sealed abstract class MyList[+T] {
   def map[S](f: T => S): MyList[S]
   def flatMap[S](f: T => MyList[S]): MyList[S]
   def filter(f: T => Boolean): MyList[T]
+
+  def getIndex[S >: T](value: S): Int
+  def runLengthEncoding: MyList[(T, Int)]
 }
 
 object MyList {
@@ -52,6 +55,10 @@ case object MyNil extends MyList[Nothing] {
   override def flatMap[S](f: Nothing => MyList[S]): MyList[S] = MyNil
 
   override def filter(f: Nothing => Boolean): MyList[Nothing] = MyNil
+
+  override def getIndex[S >: Nothing](value: S): Int = -1
+
+  override def runLengthEncoding: MyList[(Nothing, Int)] = MyNil
 }
 
 case class ::[+T](override val head: T, override val tail: MyList[T]) extends MyList[T] {
@@ -151,6 +158,37 @@ case class ::[+T](override val head: T, override val tail: MyList[T]) extends My
     }
     filterRecursive(this, MyNil).reverse
   }
+
+  override def runLengthEncoding: MyList[(T, Int)] = {
+    @tailrec
+    def runLengthEncodingRecursive(remaining: MyList[T], acc: MyList[(T, Int)]): MyList[(T, Int)] = {
+      if (remaining.isEmpty) acc
+      else {
+        val keys = acc.map(_._1)
+        val headIndex = keys.getIndex(remaining.head)
+        val newAcc = {
+          if (headIndex < 0) (remaining.head, 1) :: acc
+          else {
+            val newItem = (remaining.head, acc(headIndex)._2 + 1)
+            val accWithoutHead = acc.removeAt(headIndex)
+            newItem :: accWithoutHead
+          }
+        }
+        runLengthEncodingRecursive(remaining.tail, newAcc)
+      }
+    }
+    runLengthEncodingRecursive(this, MyNil)
+  }
+
+  override def getIndex[S >: T](value: S): Int = {
+    @tailrec
+    def getIndexRecursive(remaining: MyList[S], currentIndex: Int): Int = {
+      if (remaining.isEmpty) -1
+      else if (remaining.head == value) currentIndex
+      else getIndexRecursive(remaining.tail, currentIndex + 1)
+    }
+    getIndexRecursive(this, 0)
+  }
 }
 
 object ListsProblems extends App {
@@ -159,6 +197,7 @@ object ListsProblems extends App {
   val largeList = MyList.from(1 to 1000)
   val shortList = 1 :: MyNil
   val emptyList = MyNil
+  val runLengthEncodingList = 1 :: 3 :: 2 :: 1 :: 3 :: 1 :: MyNil
 
   // search the k-th element
   assert(testList1(0) == 1)
@@ -209,4 +248,9 @@ object ListsProblems extends App {
   assert(largeList.filter(n => n < 5).toString == "[1, 2, 3, 4]")
   assert(largeList.filter(n => n < 0) == MyNil)
   println("Filter tests OK")
+
+  // run length encoding
+  assert(testList1.runLengthEncoding.toString == "[(4,1), (3,1), (2,1), (1,1)]")
+  assert(runLengthEncodingList.runLengthEncoding.toString == "[(1,3), (3,2), (2,1)]")
+  println("Run length encoding tests OK")
 }
