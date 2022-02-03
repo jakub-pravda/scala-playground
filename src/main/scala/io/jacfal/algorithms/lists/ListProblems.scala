@@ -20,6 +20,7 @@ sealed abstract class MyList[+T] {
 
   def getIndex[S >: T](value: S): Int
   def runLengthEncoding: MyList[(T, Int)]
+  def duplicateEachElement(k: Int): MyList[T]
 }
 
 object MyList {
@@ -59,6 +60,8 @@ case object MyNil extends MyList[Nothing] {
   override def getIndex[S >: Nothing](value: S): Int = -1
 
   override def runLengthEncoding: MyList[(Nothing, Int)] = MyNil
+
+  override def duplicateEachElement(k: Int): MyList[Nothing] = MyNil
 }
 
 case class ::[+T](override val head: T, override val tail: MyList[T]) extends MyList[T] {
@@ -189,6 +192,19 @@ case class ::[+T](override val head: T, override val tail: MyList[T]) extends My
     }
     getIndexRecursive(this, 0)
   }
+
+  override def duplicateEachElement(k: Int): MyList[T] = {
+    // complexity O(N * K)
+    @tailrec
+    def duplicateRecursive(remaining: MyList[T], acc: MyList[T], repeat: Int): MyList[T] = {
+      if (remaining.isEmpty) acc
+      else if (repeat > 0) duplicateRecursive(remaining, remaining.head :: acc, repeat - 1)
+      else duplicateRecursive(remaining.tail, acc, k)
+    }
+
+    if (k <= 0) this
+    else duplicateRecursive(this, MyNil, k).reverse
+  }
 }
 
 object ListsProblems extends App {
@@ -253,4 +269,10 @@ object ListsProblems extends App {
   assert(testList1.runLengthEncoding.toString == "[(4,1), (3,1), (2,1), (1,1)]")
   assert(runLengthEncodingList.runLengthEncoding.toString == "[(1,3), (3,2), (2,1)]")
   println("Run length encoding tests OK")
+
+  // duplicate each element tests
+  assert(testList1.duplicateEachElement(3).toString == "[1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]")
+  assert(testList2.duplicateEachElement(1).toString == "[5, 6, 7, 8]")
+  assert(testList2.duplicateEachElement(-1).toString == "[5, 6, 7, 8]")
+  println("Duplicate each element tests OK")
 }
