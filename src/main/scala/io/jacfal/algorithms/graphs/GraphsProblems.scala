@@ -12,7 +12,6 @@ object GraphsProblems extends App {
 
   def inDegree[T](graph: Graph[T], node: T): Int = graph.values.count(_.contains(node))
 
-  //
   def isPath[T](graph: Graph[T], start: T, end: T): Boolean = {
     @tailrec
     def traversePathRecursive(nodesToCheck: Set[T], visited: Set[T]): Boolean = {
@@ -31,17 +30,44 @@ object GraphsProblems extends App {
     }
   }
 
+  def findPath[T](graph: Graph[T], start: T, end: T): List[T] = {
+    @tailrec
+    def findPathRecursive(currentNodes: Set[T], path: List[T], remaining: Graph[T]): List[T] = {
+      // TODO redesign, apply dijskstra algorithm
+      val currentNodeName = path.head
+
+      if (currentNodes.isEmpty) findPathRecursive( // STEP BACKWARD
+        remaining.getOrElse(path.tail.head, Set.empty), // get nodes of previous node
+        path.tail, // remove current node from path list
+        remaining - currentNodeName) // remove current node from graph (explored, dead end)
+      else if (currentNodes.head == end) currentNodes.head +: path
+      else {
+        val nextNodeName = currentNodes.head
+        val nextNodes = remaining.getOrElse(nextNodeName, Set.empty)
+        val remainingUpdated = remaining + (currentNodeName -> (currentNodes - nextNodeName))  // next node will be explored, remove it from set
+        findPathRecursive(nextNodes, nextNodeName +: path, remainingUpdated)
+      }
+    }
+
+    graph.get(start) match {
+      case None => List.empty
+      case Some(nodes) => findPathRecursive(nodes, List(start), graph)
+    }
+  }
+
   // ** TESTS ***
   val paths: Graph[String] = Map(
-    "Prague" -> Set("Brno", "Pilsen"),
+    "Prague" -> Set("CeskeBudejovice", "Brno", "Pilsen"),
     "Pilsen" -> Set("Prague", "Ostrava"),
-    "Brno" -> Set("Prague", "Ostrava"),
+    "Brno" -> Set("Prague", "Ostrava", "Pilsen"),
     "Ostrava" -> Set("Pilsen", "Brno"),
-    "Havirov" -> Set("Ostrava")
+    "Havirov" -> Set("Ostrava"),
+    "CeskeBudejovice" -> Set("Lipno"),
+    "Lipno" -> Set()
   )
 
   assert(inDegree(paths, "Ostrava") == 3)
-  assert(outDegree(paths, "Brno") == 2)
+  assert(outDegree(paths, "Brno") == 3)
   println("Init graph tests OK")
 
   assert(isPath(paths, "Prague", "Brno"))
@@ -50,4 +76,10 @@ object GraphsProblems extends App {
   assert(isPath(paths, "Havirov", "Prague"))
   assert(!isPath(paths, "Prague", "Havirov"))
   println("Is path tests OK")
+
+  println(findPath(paths, "Prague", "Brno").toString())
+  println(findPath(paths, "Prague", "Pilsen").toString())
+  println(findPath(paths, "Brno", "Lipno").toString())
+  println(findPath(paths, "Opava", "CeskeBudejovice").toString())
+  println(findPath(paths, "Pilsen", "Ostrava").toString())
 }
