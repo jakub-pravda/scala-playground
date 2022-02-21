@@ -219,7 +219,7 @@ case class ::[+T](override val head: T, override val tail: MyList[T]) extends My
     }
 
     if (rotateIndex <= 0) this
-    rotateRecursive(this, 1, MyNil)
+    else rotateRecursive(this, 1, MyNil)
   }
 }
 
