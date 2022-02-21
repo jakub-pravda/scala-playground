@@ -21,6 +21,7 @@ sealed abstract class MyList[+T] {
   def getIndex[S >: T](value: S): Int
   def runLengthEncoding: MyList[(T, Int)]
   def duplicateEachElement(k: Int): MyList[T]
+  def rotate(k: Int): MyList[T]
 }
 
 object MyList {
@@ -62,6 +63,8 @@ case object MyNil extends MyList[Nothing] {
   override def runLengthEncoding: MyList[(Nothing, Int)] = MyNil
 
   override def duplicateEachElement(k: Int): MyList[Nothing] = MyNil
+
+  override def rotate(k: Int): MyList[Nothing] = MyNil
 }
 
 case class ::[+T](override val head: T, override val tail: MyList[T]) extends MyList[T] {
@@ -205,6 +208,19 @@ case class ::[+T](override val head: T, override val tail: MyList[T]) extends My
     if (k <= 0) this
     else duplicateRecursive(this, MyNil, k).reverse
   }
+
+  override def rotate(k: Int): MyList[T] = {
+    val rotateIndex = k % this.length
+
+    @tailrec
+    def rotateRecursive(remaining: MyList[T], currentPosition: Int, acc: MyList[T]): MyList[T] = {
+      if (currentPosition > rotateIndex) remaining ++ acc.reverse
+      else rotateRecursive(remaining.tail, currentPosition + 1, remaining.head :: acc)
+    }
+
+    if (rotateIndex <= 0) this
+    rotateRecursive(this, 1, MyNil)
+  }
 }
 
 object ListsProblems extends App {
@@ -275,4 +291,9 @@ object ListsProblems extends App {
   assert(testList2.duplicateEachElement(1).toString == "[5, 6, 7, 8]")
   assert(testList2.duplicateEachElement(-1).toString == "[5, 6, 7, 8]")
   println("Duplicate each element tests OK")
+
+  assert(testList1.rotate(3).toString == "[4, 1, 2, 3]")
+  assert(testList1.rotate(1).toString == "[2, 3, 4, 1]")
+  assert(testList2.rotate(5).toString == "[6, 7, 8, 5]")
+  println("Rotate tests OK")
 }
