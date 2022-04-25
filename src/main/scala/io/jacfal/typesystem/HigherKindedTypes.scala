@@ -47,9 +47,9 @@ object HigherKindedTypes extends App {
 
   val monadList = new MonadList(List(1, 2, 3))
   monadList.flatMap(x => List(x, x + 1))
-  // Monad[List, Int] => List[Int]
+  // MonadPattern[List, Int] => List[Int]
   monadList.map(_ * 2)
-  // Monad[List, Int] => List[Int]
+  // MonadPattern[List, Int] => List[Int]
 
   multiply(List(1, 2), List("a", "b")) // it's compiled because of implicits
 }
