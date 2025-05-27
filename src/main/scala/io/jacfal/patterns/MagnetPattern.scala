@@ -19,6 +19,7 @@ object MagnetPattern extends App {
 
     implicit class FromString(input: => String) extends GiveMeResultMagnet[String] {
       def apply(): String = "twenty six"
+  
     }
 
     implicit class FromInt(input: => Int) extends GiveMeResultMagnet[Int] {

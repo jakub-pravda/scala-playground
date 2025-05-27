@@ -5,6 +5,7 @@ import io.jacfal.advanced.FuturesPromises.User
 import java.util.Date
 import scala.concurrent.duration.DurationInt
 
+// Fancy naming for implicts is contextual abstraction
 object ImplicitsIntro extends App {
   val pair = "Jacob" -> "True"
 
